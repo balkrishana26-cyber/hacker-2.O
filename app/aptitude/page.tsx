@@ -76,6 +76,10 @@ export default function AptitudeTestPage() {
         model = m
         const detector = await m.load(m.SupportedPackages.mediapipeFacemesh)
 
+        let lastNoseX: number | null = null
+        let closedFrames = 0
+        const dist = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1])
+
         const checkFrame = async () => {
           if (!video || video.readyState < 2) return
           const faces = await detector.estimateFaces({ input: video as HTMLVideoElement })
@@ -84,9 +88,10 @@ export default function AptitudeTestPage() {
             autoSubmit("violation")
             return
           }
-          // basic presence check: bounding box area
-          const face = faces[0]
-          const box = (face as any).boundingBox
+
+          const face = faces[0] as any
+          // bounding box presence check
+          const box = face.boundingBox
           if (box) {
             const w = box.bottomRight[0] - box.topLeft[0]
             const h = box.bottomRight[1] - box.topLeft[1]
@@ -95,6 +100,56 @@ export default function AptitudeTestPage() {
               setViolation("Face too small or too far from camera")
               autoSubmit("violation")
               return
+            }
+          }
+
+          // try to access mesh/keypoints for eyes and nose
+          const mesh: any[] | undefined = face.scaledMesh || face.keypoints?.map((k: any) => [k.x, k.y])
+          if (mesh && mesh.length > 200) {
+            // indices based on MediaPipe facemesh
+            const nose = mesh[1]
+            const leftTop = mesh[159]
+            const leftBottom = mesh[145]
+            const leftLeft = mesh[33]
+            const leftRight = mesh[133]
+            const rightTop = mesh[386]
+            const rightBottom = mesh[374]
+            const rightLeft = mesh[362]
+            const rightRight = mesh[263]
+
+            // head movement: nose x change
+            if (nose && Array.isArray(nose)) {
+              const nx = nose[0]
+              if (lastNoseX !== null) {
+                if (Math.abs(nx - lastNoseX) > 120) {
+                  setViolation("Rapid head movement detected (possible cheating)")
+                  autoSubmit("violation")
+                  return
+                }
+              }
+              lastNoseX = nx
+            }
+
+            // eye aspect ratio for blink detection
+            if (leftTop && leftBottom && leftLeft && leftRight && rightTop && rightBottom && rightLeft && rightRight) {
+              const leftV = (dist(leftTop, leftBottom))
+              const leftH = dist(leftLeft, leftRight)
+              const rightV = dist(rightTop, rightBottom)
+              const rightH = dist(rightLeft, rightRight)
+              const leftEAR = leftH > 0 ? leftV / leftH : 1
+              const rightEAR = rightH > 0 ? rightV / rightH : 1
+              const ear = (leftEAR + rightEAR) / 2
+              // if eyes are mostly closed for several frames, consider as cover/cheating
+              if (ear < 0.12) {
+                closedFrames++
+              } else {
+                closedFrames = 0
+              }
+              if (closedFrames > 6) {
+                setViolation("Eyes appear closed or camera covered")
+                autoSubmit("violation")
+                return
+              }
             }
           }
         }

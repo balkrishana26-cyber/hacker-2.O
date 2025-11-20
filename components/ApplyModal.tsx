@@ -19,6 +19,13 @@ export default function ApplyModal({ internshipId, onClose, onSuccess }: Props) 
   const [error, setError] = useState<string | null>(null);
   const [resumeError, setResumeError] = useState<string | null>(null);
   const [messageError, setMessageError] = useState<string | null>(null);
+  const [resultId, setResultId] = useState<string | null>(null);
+
+  // read stored aptitude result id if any
+  if (typeof window !== "undefined" && resultId === null) {
+    const rid = localStorage.getItem("aptitudeResultId")
+    if (rid) setResultId(rid)
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +35,12 @@ export default function ApplyModal({ internshipId, onClose, onSuccess }: Props) 
     setMessageError(null);
 
     // Client-side validation: both fields are required
+    // Check that aptitude result is attached
+    if (!resultId) {
+      setError("You must complete the Aptitude test before applying. Visit /aptitude to take the test.")
+      setLoading(false)
+      return
+    }
     if (!resumeLink.trim()) {
       setResumeError("Resume link is required");
       setLoading(false);
@@ -60,7 +73,7 @@ export default function ApplyModal({ internshipId, onClose, onSuccess }: Props) 
       const res = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ internshipId, resumeLink, message }),
+        body: JSON.stringify({ internshipId, resumeLink, message, resultId }),
       });
       const data = await res.json();
       if (!res.ok) {
