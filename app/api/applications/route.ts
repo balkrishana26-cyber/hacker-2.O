@@ -4,6 +4,7 @@ import { Application } from "@/dbConnection/Schema/application";
 // ensure Internship model is registered for populate
 import "@/dbConnection/Schema/internship";
 import { User } from "@/dbConnection/Schema/user";
+import { AptitudeResult } from "@/dbConnection/Schema/aptitudeResult";
 import jwt from "jsonwebtoken";
 
 async function getUserFromRequest(req: NextRequest) {
@@ -31,10 +32,15 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
-  const { internshipId, resumeLink, message, name, email } = body;
+  const { internshipId, resumeLink, message, name, email, resultId } = body;
   if (!internshipId) return NextResponse.json({ error: "internshipId is required" }, { status: 400 });
+  if (!resultId) return NextResponse.json({ error: "Aptitude test result must be attached (resultId)" }, { status: 400 });
 
   try {
+    // ensure result exists
+    const found = await AptitudeResult.findById(resultId).lean().catch(() => null);
+    if (!found) return NextResponse.json({ error: "Provided aptitude result not found" }, { status: 400 });
+
     const typedUser = user as { _id?: string; name?: string; email?: string };
     const application = await Application.create({
       internship: internshipId,
@@ -42,6 +48,7 @@ export async function POST(request: NextRequest) {
       name: name || typedUser.name || "",
       email: email || typedUser.email || "",
       resumeLink: resumeLink || "",
+      aptitudeResult: resultId,
       message: message || "",
     });
     return NextResponse.json({ success: true, application });
