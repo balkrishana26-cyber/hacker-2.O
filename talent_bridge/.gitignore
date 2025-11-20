@@ -48,6 +48,3 @@ pnpm-lock.yaml
 
 # Ignore public build artifacts
 public/*.map
-
-# Backup of nested .git folders created during consolidation
-.git-backups/
