@@ -5,14 +5,21 @@ import { Internship } from "@/dbConnection/Schema/internship";
 type PartialIntern = { title?: string; company?: string; description?: string; [k: string]: unknown };
 
 export async function GET() {
-  await connectDb();
+  try {
+    await connectDb();
+  } catch (err) {
+    console.warn("Internships API: DB connect failed, returning empty list", err);
+    return NextResponse.json({ count: 0, data: [] });
+  }
 
   try {
     const internships = await Internship.find().sort({ createdAt: -1 }).lean();
     return NextResponse.json({ count: internships.length, data: internships });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    // If DB operations fail, return empty list so front-end can still render
+    console.error("Internships query failed:", message);
+    return NextResponse.json({ count: 0, data: [] });
   }
 }
 
