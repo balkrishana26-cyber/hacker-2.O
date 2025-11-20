@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { LoginDialog } from "@/components/LoginDialog";
 import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { Menu } from "lucide-react";
 import Image from "next/image";
@@ -60,6 +61,15 @@ export function Header() {
     };
   }, []);
 
+  // show aptitude result id badge
+  const [aptResultId, setAptResultId] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const rid = localStorage.getItem('aptitudeResultId');
+      if (rid) setAptResultId(rid as string);
+    }
+  }, [])
+
   async function logout() {
     await authLogout();
   }
@@ -79,6 +89,11 @@ export function Header() {
 
           {/* Desktop avatar + theme + logout */}
           <div className="hidden md:flex items-center gap-3">
+            {aptResultId && (
+              <div title={`Aptitude result: ${aptResultId}`} className="px-2 py-1 rounded bg-primary/10 text-primary text-xs">
+                Test: {aptResultId.slice(0,8)}
+              </div>
+            )}
             {authChecked ? (user ? (
               <div className="relative" ref={avatarRef}>
                 <button onClick={() => setAvatarMenu((s) => !s)} className="p-1">

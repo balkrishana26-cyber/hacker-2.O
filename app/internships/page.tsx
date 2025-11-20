@@ -45,6 +45,7 @@ export default function InternshipsPage() {
   const [applicationStatusMap, setApplicationStatusMap] = useState<Record<string, string>>({});
 
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
+  const [aptResultId, setAptResultId] = useState<string | null>(null);
 
   const fetchUserApplications = useCallback(async () => {
     try {
@@ -116,6 +117,12 @@ export default function InternshipsPage() {
   useEffect(() => {
     fetchInternships();
   }, [fetchInternships]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const rid = localStorage.getItem("aptitudeResultId");
+    setAptResultId(rid);
+  }, []);
   // derive filtered results from internships + filters
   const filtered = useMemo(() => {
     const parseStipendNumber = (s?: string) => {
@@ -271,6 +278,23 @@ export default function InternshipsPage() {
           <section className="md:col-span-3">
             {error && <div className="text-red-500 mb-4">{error}</div>}
 
+            {/* Prompt to take aptitude test when result missing */}
+            {!aptResultId && (
+              <div className="mb-4">
+                <Card>
+                  <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-semibold">Complete Aptitude Test</h3>
+                      <p className="text-sm text-muted-foreground">You must complete the aptitude test before applying to internships. Your result is attached to your resume automatically.</p>
+                    </div>
+                    <div>
+                      <Button onClick={() => { window.location.href = '/aptitude'; }}>Take Test Now</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             <div className="flex flex-col gap-6">
               {loading ? (
                 // skeleton list: show 4 placeholders that match Card layout
@@ -326,7 +350,11 @@ export default function InternshipsPage() {
                             <Button className="whitespace-nowrap" disabled>Applied</Button>
                           )
                         ) : (
-                          <Button className="whitespace-nowrap" onClick={() => setApplyingTo(it._id || null)}>Apply Now</Button>
+                          !aptResultId ? (
+                            <Button className="whitespace-nowrap" variant="ghost" onClick={() => { window.location.href = '/aptitude'; }}>Take Test to Apply</Button>
+                          ) : (
+                            <Button className="whitespace-nowrap" onClick={() => setApplyingTo(it._id || null)}>Apply Now</Button>
+                          )
                         )}
                       </div>
                     </CardContent>
