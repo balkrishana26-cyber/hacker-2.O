@@ -6,7 +6,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { LoginDialog } from "@/components/LoginDialog";
 import { useEffect, useRef, useState } from "react";
-import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { Menu } from "lucide-react";
 import Image from "next/image";

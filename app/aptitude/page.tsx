@@ -59,7 +59,7 @@ export default function AptitudeTestPage() {
   // Basic motion/away detection using frame-difference
   useEffect(() => {
     if (!started) return
-    let model: typeof faceLandmarks | null = null
+    let model: any = null
     let intervalId: any = null
     const video = videoRef.current
     const canvas = canvasRef.current
@@ -67,12 +67,14 @@ export default function AptitudeTestPage() {
 
     const loadAndRun = async () => {
       try {
-        const tf = await import("@tensorflow/tfjs")
+        // Use eval-wrapped dynamic imports so the bundler doesn't statically analyze
+        // these heavy browser-only packages during server build.
+        const tf = await (eval('import("@tensorflow/tfjs")'))
         await tf.ready()
-        await import("@tensorflow/tfjs-backend-webgl")
-        const m = await import("@tensorflow-models/face-landmarks-detection")
+        await (eval('import("@tensorflow/tfjs-backend-webgl")'))
+        const m = await (eval('import("@tensorflow-models/face-landmarks-detection")'))
         model = m
-        const detector = await m.load(m.SupportedPackages.mediapipeFacemesh)
+        const detector = await m.load(m.SupportedPackages?.mediapipeFacemesh)
 
         let lastNoseX: number | null = null
         let closedFrames = 0
