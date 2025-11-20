@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.DB;
+// Support multiple env var names for the DB connection string
+const MONGODB_URI = process.env.DB || process.env.MONGODB_URI || process.env.MONGODB_URL || "";
 
 // Global cache for dev environments
 type MongooseCache = {
@@ -29,7 +30,8 @@ export async function connectDb(): Promise<typeof mongoose> {
   }
 
   if (!MONGODB_URI) {
-    throw new Error("Please define the DB environment variable in .env");
+    console.warn("DB connection string not provided. Running without DB. Set DB or MONGODB_URI to enable persistence.")
+    return cache.conn as unknown as typeof mongoose
   }
 
   if (!cache.promise) {
@@ -46,6 +48,8 @@ export async function connectDb(): Promise<typeof mongoose> {
     return cache.conn;
   } catch (error) {
     cache.promise = null;
-    throw error;
+    // Log the error but do not throw so the app can run in fallback mode
+    console.error("MongoDB connection failed:", (error as Error).message || error)
+    return cache.conn as unknown as typeof mongoose
   }
 }

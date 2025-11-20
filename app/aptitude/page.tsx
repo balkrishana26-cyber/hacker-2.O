@@ -1,8 +1,6 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
-// @ts-ignore - dynamic imports for TF
-import type * as faceLandmarks from "@tensorflow-models/face-landmarks-detection"
 
 
 type Question = {

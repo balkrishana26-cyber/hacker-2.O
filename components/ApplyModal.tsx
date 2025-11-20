@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,11 +21,12 @@ export default function ApplyModal({ internshipId, onClose, onSuccess }: Props) 
   const [messageError, setMessageError] = useState<string | null>(null);
   const [resultId, setResultId] = useState<string | null>(null);
 
-  // read stored aptitude result id if any
-  if (typeof window !== "undefined" && resultId === null) {
+  // read stored aptitude result id if any (useEffect so this runs client-side)
+  useEffect(() => {
+    if (typeof window === "undefined") return
     const rid = localStorage.getItem("aptitudeResultId")
     if (rid) setResultId(rid)
-  }
+  }, [])
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
