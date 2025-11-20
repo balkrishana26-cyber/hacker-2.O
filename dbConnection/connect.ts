@@ -34,6 +34,12 @@ export async function connectDb(): Promise<typeof mongoose> {
     return cache.conn as unknown as typeof mongoose
   }
 
+  // Basic validation: avoid attempting to connect with malformed connection strings
+  if (!MONGODB_URI.startsWith("mongodb://") && !MONGODB_URI.startsWith("mongodb+srv://")) {
+    console.warn("DB connection string appears to be invalid or uses an unsupported scheme. Skipping DB connection.")
+    return cache.conn as unknown as typeof mongoose
+  }
+
   if (!cache.promise) {
     console.log("🌐 Creating a new MongoDB connection...");
     cache.promise = mongoose.connect(MONGODB_URI, {
